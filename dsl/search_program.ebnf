@@ -1,0 +1,46 @@
+program         = { step }, stop ;
+
+step            = search
+                | search_join
+                | open
+                | bind_entity
+                | select_min ;
+
+search          = "SEARCH", "(", qspan_ptr, ")" ;
+search_join     = "SEARCH_JOIN", "(", qspan_ptr, ",", entity_ref, ")" ;
+open            = "OPEN", "(", result_rank, ")" ;
+bind_entity     = "BIND_ENTITY", "(", doc_ref, ",", span_ptr, ")" ;
+select_min      = "SELECT_MIN", "(",
+                  entity_ref, ",", entity_ref, ",", comparable_field,
+                  ")" ;
+stop            = "STOP", "(", answer_ptr, ",", evidence_set, ")" ;
+
+evidence_set    = "{", [ evidence_ptr, { ",", evidence_ptr } ], "}" ;
+
+qspan_ptr       = "<q:", token_index, ":", token_index, ">" ;
+span_ptr        = "<s:", token_index, ":", token_index, ">" ;
+answer_ptr      = doc_ref, ":", span_ptr ;
+evidence_ptr    = doc_ref, ":", span_ptr ;
+
+entity_ref      = "$E", positive_integer ;
+doc_ref         = "$D", positive_integer ;
+result_rank     = positive_integer ;
+
+comparable_field = "birth_date"
+                 | "date"
+                 | "number" ;
+
+token_index     = non_negative_integer ;
+positive_integer = digit_nonzero, { digit } ;
+non_negative_integer = "0" | positive_integer ;
+digit           = "0" | digit_nonzero ;
+digit_nonzero   = "1" | "2" | "3" | "4" | "5"
+                | "6" | "7" | "8" | "9" ;
+
+(* Runtime legality is narrower than grammar:
+   - qspan_ptr must address the current question;
+   - entity_ref/doc_ref/result_rank must exist in current state;
+   - span_ptr must address the referenced opened document;
+   - answer/evidence pointers must be visible reader candidates or spans;
+   - SELECT_MIN requires the same typed field for both entities. *)
+
